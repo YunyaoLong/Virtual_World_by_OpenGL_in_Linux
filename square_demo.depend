@@ -1,0 +1,22 @@
+# depslib dependency file v1.0
+1496310154 source:/home/yunyao/dev/C++/square_demo/main.cpp
+	<GL/glut.h>
+	<GL/gl.h>
+	<GL/glu.h>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	"tcp_server.h"
+
+1496115171 /home/yunyao/dev/C++/square_demo/tcp_server.h
+	<sys/types.h>
+	<sys/socket.h>
+	<stdio.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<unistd.h>
+	<string.h>
+	<stdlib.h>
+	<fcntl.h>
+	<sys/shm.h>
+
