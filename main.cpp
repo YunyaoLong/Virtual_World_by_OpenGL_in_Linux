@@ -1,10 +1,12 @@
-//
-// This code was created by Jeff Molofee '99 (ported to Linux/GLUT by Richard Campbell '99)
-//
-// If you've found this code useful, please let me know.
-//
-// Visit Jeff at www.demonews.com/hosted/nehe
-// (email Richard Campbell at ulmont@bellsouth.net)
+/************************************************************
+* writer : Yao Yunlong, Sun Yat-Sen University, SYSU        *
+* date : 15/7/2017                                          *
+* If you found this code useful, please let me know.        *
+*                                                           *
+* url : http://yaoyl.cn or http://my.csdn.net/Michael753951 *
+* github : https://github.com/LongyunYao                    *
+* (email me at yaoyl753951@gmail.com)                       *
+*************************************************************/
 //
 #include <GL/glut.h>    // Header File For The GLUT Library
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
@@ -12,10 +14,21 @@
 #include <stdio.h>      // Header file for standard file i/o.
 #include <stdlib.h>     // Header file for malloc/free.
 #include <unistd.h>     // needed to sleep.
+#include <time.h>
 #include "tcp_server.h"
+#include "image.h"
+#include "texture.h"
+#include "Objects.h"
+#include "config.h"
+#include "TimeTool.h"
+#include "WorldMap.h"
+#include "Character.h"  // 获取主角的各个参数
 
 /* ascii code for the escape key */
 #define ESCAPE 27
+#define CHANGE_MODE 99
+#define DISAPPEAR_BOX 100
+#define CHANGE_TEXTURE 116
 
 /* The number of our GLUT window */
 int window;
@@ -23,305 +36,94 @@ int window;
 /* floats for x rotation, y rotation, z rotation */
 //float xrot, yrot, zrot;
 
-/* storage for one texture  */
-GLuint texture[4];         // 4种纹理，分别包含两种楼栋，一个公路，以及草地
-
-GLuint road;             // storage for the display list
-GLuint grass;        // storage for the 2nd display list
-GLuint building1;        // storage for the 2nd display list
-GLuint building2;        // storage for the 2nd display list
 GLuint xloop;            // loop for x axis.
 GLuint yloop;            // loop for y axis.
 
 GLfloat xrot;            // rotates cube on the x axis.
 GLfloat yrot;            // rotates cube on the y axis.
 
-int square_len;
+
+GLfloat runLen;        // 用来控制向前行驶
+GLfloat runLenMax = 0.4f;  // 用来控制最高速度
+GLfloat runLenMin = 0.0f;  // 用来控制最低速度
+GLfloat barRunLen;
+GLfloat childPos, barPos;
+GLfloat barLeftPos = -3.0f, barRightPos = 1.0f; // 左右障碍物的位置
+GLfloat childRunLen, childRunRate = 0.065f;  // 用来控制小孩的跑动, 其中第二个参数为障碍物出现的速度
+// 步进速度以及步进加速度，其中不经速度上界为0.1f
+// 步进速度和脚踏的角度有关，这里先默认为0.01f
+GLfloat goAheadRate, goAheadAc = 0.001f;
+
+// bdwAppear 用来存放不倒翁的3种出状态(消失,开始移动,静止), appear_mode用来存放不倒翁的出现方式(从左边出现还是随机出现)
+char bdwAppear, appearMode, commonTextureMode;
+
+// 左侧有12*4个单位的长度，右侧同样
+// 一个int有32位，每一位便可以表示一个格子，每个格子长4个单位
+int buildingLeftFlag, buildingRightFlag;
+
+// 左侧有16*3个单位的长度，右侧同样, 用来标志某个位置的箱子是否为障碍箱子
+int barLeftFlag, barRightFlag;
+
+// 左侧有16*3个单位的长度，右侧同样, 用来标志模式5中, 该箱子是否需要显示(障碍箱子必定显示)
+int visibleLeftFlag, visibleRightFlag;
+
+bool leftOrRightFlag;
+// disappear 用来存放障碍物将要消失的时间
+int disappearTime;
+
+char disappearBoxMode;
+
+int squareLen;
 
 /* TCP 链接  */
 #define BUFFER_SIZE 1024
-int server_sockfd, conn;
+int serverSockfd, conn;
 char buffer[BUFFER_SIZE];
-bool server_init_flag;
-
-// colors for boxes.
-static GLfloat boxcol[5][3]= {
-    {1.0f,0.0f,0.0f},{1.0f,0.5f,0.0f},{1.0f,1.0f,0.0f},{0.0f,1.0f,0.0f},{0.0f,1.0f,1.0f}
-};
-
-// colors for tops of boxes.
-static GLfloat topcol[5][3]= {
-    {.5f,0.0f,0.0f},{0.5f,0.25f,0.0f},{0.5f,0.5f,0.0f},{0.0f,0.5f,0.0f},{0.0f,0.5f,0.5f}
-};
-
-/* Image type - contains height, width, and data */
-struct Image {
-    unsigned long sizeX;
-    unsigned long sizeY;
-    char *data;
-};
-typedef struct Image Image;
-
-// build the display list.
-GLvoid BuildList() {
-
-    // 首先绘制马路
-    road = glGenLists(3);              // generate storage for 2 lists, and return a pointer to the first.
-    glNewList(road, GL_COMPILE);       // store this list at location cube, and compile it once.
-
-    // cube without the top;
-    glBegin(GL_QUADS);			// Bottom Face
-    // 逆时针绘制
-    // 这个部分存放了马路的渲染元素
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(0.0f, 0.0f, 4.0f);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(4.0f, 0.0f, 4.0f);
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(4.0f, 0.0f, 0.0f);
-    glEnd();
-    glEndList();
-
-    // 接着绘制草坪
-    grass = road + 1;
-    glNewList(grass, GL_COMPILE);        // generate 2nd list (top of box).
-    glBegin(GL_QUADS);
-    glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(0.0f, 0.0f, 0.0f);
-    glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(0.0f, 0.0f, 4.0f);
-    glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(4.0f, 0.0f, 4.0f);
-    glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(4.0f, 0.0f, 0.0f);
-    glEnd();
-    glEndList();
+bool serverInitFlag;
 
 
-    // 绘制楼栋
-    building1 = grass + 1;                    // since we generated 2 lists, this is where the second is...1 GLuint up from cube.
-    glNewList(building1, GL_COMPILE);        // generate 2nd list (top of box).
-    glBegin(GL_QUADS);
-    GLfloat width = 1.0, height = 1.0, depth = 1.0;
-    // 上顶面
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
+// 怪物出现概率
+float monsterPro = 0.1;
 
-    // 下底面
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
+// 记录怪兽出现的时间
+time_t appear, appearTmp;
 
-    // 前面
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
+// 记录当前时间和一些参数
+FILE *fp = NULL;
+time_t now;
+struct tm *tmNow;
 
-    // 后面
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
+WorldMap worldMap;
+Config config;
 
-    // 左边
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
+#include <pthread.h>
+// 定义一个接受eeg数据的数组
+#define HELLO_WORLD_SERVER_PORT    4000
+#define LENGTH_OF_LISTEN_QUEUE 20
+#define CLIENT_IP "192.168.0.1"
+#define MAX_EEG_DATA_BUFFER_SIZE 80
+#define MAX_EEG_DAT 0.02
+int signal, signalTmp;
+int mark, markTmp;
+float eegDataBuffer[MAX_EEG_DATA_BUFFER_SIZE];
+int markPos[MAX_EEG_DATA_BUFFER_SIZE], signalPos[MAX_EEG_DATA_BUFFER_SIZE];
+int eegDataPos;
+float data1, data2, data3;
+pthread_t writeEegDataBufferThread;
+struct sockaddr_in serverAddr;
+int serverSocket;
+struct sockaddr_in clientAddr;
+int clientSocket;
+socklen_t length;
+char eachLineData[BUFFER_SIZE];
 
-    // 右面
-    glTexCoord2f(width, depth); glVertex3f(-1.0f, 5.0f, 0.0f);	// Top Right Of The Texture and Quad
-    glTexCoord2f(width, 0.0f);  glVertex3f(-1.0f, 5.0f, 1.0f);	// Top Left Of The Texture and Quad
-    glTexCoord2f(0.0f, 0.0f);   glVertex3f( 0.0f, 5.0f, 1.0f);	// Bottom Left Of The Texture and Quad
-    glTexCoord2f(0.0f, depth);  glVertex3f( 0.0f, 5.0f, 0.0f);	// Bottom Right Of The Texture and Quad
-    glEnd();
-
-    glEndList();
-}
-
-// quick and dirty bitmap loader...for 24 bit bitmaps with 1 plane only.
-// See http://www.dcs.ed.ac.uk/~mxr/gfx/2d/BMP.txt for more info.
-int ImageLoad(char *filename, Image *image) {
-    FILE *file;
-    unsigned long size;                 // size of the image in bytes.
-    unsigned long i;                    // standard counter.
-    unsigned short int planes;          // number of planes in image (must be 1)
-    unsigned short int bpp;             // number of bits per pixel (must be 24)
-    char temp;                          // temporary color storage for bgr-rgb conversion.
-
-    // make sure the file is there.
-    if ((file = fopen(filename, "rb"))==NULL) {
-        printf("File Not Found : %s\n",filename);
-        return 0;
-    }
-
-    // seek through the bmp header, up to the width/height:
-    fseek(file, 18, SEEK_CUR);
-
-    // read the width
-    if ((i = fread(&image->sizeX, 4, 1, file)) != 1) {
-        printf("Error reading width from %s.\n", filename);
-        return 0;
-    }
-    printf("Width of %s: %lu\n", filename, image->sizeX);
-
-    // read the height
-    if ((i = fread(&image->sizeY, 4, 1, file)) != 1) {
-        printf("Error reading height from %s.\n", filename);
-        return 0;
-    }
-    printf("Height of %s: %lu\n", filename, image->sizeY);
-
-    // calculate the size (assuming 24 bits or 3 bytes per pixel).
-    size = image->sizeX * image->sizeY * 3;
-
-    // read the planes
-    if ((fread(&planes, 2, 1, file)) != 1) {
-        printf("Error reading planes from %s.\n", filename);
-        return 0;
-    }
-    if (planes != 1) {
-        printf("Planes from %s is not 1: %u\n", filename, planes);
-        return 0;
-    }
-
-    // read the bpp
-    if ((i = fread(&bpp, 2, 1, file)) != 1) {
-        printf("Error reading bpp from %s.\n", filename);
-        return 0;
-    }
-    if (bpp != 24) {
-        printf("Bpp from %s is not 24: %u\n", filename, bpp);
-        return 0;
-    }
-
-    // seek past the rest of the bitmap header.
-    fseek(file, 24, SEEK_CUR);
-
-    // read the data.
-    image->data = (char *) malloc(size);
-    if (image->data == NULL) {
-        printf("Error allocating memory for color-corrected image data");
-        return 0;
-    }
-
-    if ((i = fread(image->data, size, 1, file)) != 1) {
-        printf("Error reading image data from %s.\n", filename);
-        return 0;
-    }
-
-    for (i=0; i<size; i+=3) { // reverse all of the colors. (bgr -> rgb)
-        temp = image->data[i];
-        image->data[i] = image->data[i+2];
-        image->data[i+2] = temp;
-    }
-
-    // we're done.
-    return 1;
-}
-
-// Load Bitmaps And Convert To Textures
-void LoadGLTextures() {
-    // Load Texture
-    Image *image1;
-
-    /* 载入道路*/
-    // allocate space for texture
-    image1 = (Image *) malloc(sizeof(Image));
-    if (image1 == NULL) {
-        printf("Error allocating space for image");
-        exit(0);
-    }
-
-    if (!ImageLoad("Data/road.bmp", image1)) {
-        exit(1);
-    }
-
-    // Create Texture
-    glGenTextures(1, &texture[0]);
-    glBindTexture(GL_TEXTURE_2D, texture[0]);   // 2d texture (x and y size)
-
-    // 更换滤波方式之后，出来的效果比上面的更好
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST); // scale cheaply when image bigger than texture
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST); // scale cheaply when image smalled than texture
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, image1->sizeX, image1->sizeY, GL_RGB, GL_UNSIGNED_BYTE, image1->data);
-    free(image1);
-
-    /* 载入草地 */
-    image1 = (Image *) malloc(sizeof(Image));
-    if (image1 == NULL) {
-        printf("Error allocating space for image");
-        exit(0);
-    }
-
-    if (!ImageLoad("Data/grass.bmp", image1)) {
-        exit(1);
-    }
-
-    // Create Texture
-    glGenTextures(1, &texture[1]);
-    glBindTexture(GL_TEXTURE_2D, texture[1]);   // 2d texture (x and y size)
-
-    // 更换滤波方式之后，出来的效果比上面的更好
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST); // scale cheaply when image bigger than texture
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST); // scale cheaply when image smalled than texture
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, image1->sizeX, image1->sizeY, GL_RGB, GL_UNSIGNED_BYTE, image1->data);
-    free(image1);
-
-    /* 载入楼栋1 */
-    image1 = (Image *) malloc(sizeof(Image));
-    if (image1 == NULL) {
-        printf("Error allocating space for image");
-        exit(0);
-    }
-
-    if (!ImageLoad("Data/building.bmp", image1)) {
-        exit(1);
-    }
-
-    // Create Texture
-    glGenTextures(1, &texture[2]);
-    glBindTexture(GL_TEXTURE_2D, texture[2]);   // 2d texture (x and y size)
-
-    // 更换滤波方式之后，出来的效果比上面的更好
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST); // scale cheaply when image bigger than texture
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST); // scale cheaply when image smalled than texture
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, image1->sizeX, image1->sizeY, GL_RGB, GL_UNSIGNED_BYTE, image1->data);
-    free(image1);
-
-    /* 载入楼栋2 */
-    image1 = (Image *) malloc(sizeof(Image));
-    if (image1 == NULL) {
-        printf("Error allocating space for image");
-        exit(0);
-    }
-
-    if (!ImageLoad("Data/building2.bmp", image1)) {
-        exit(1);
-    }
-
-    // Create Texture
-    glGenTextures(1, &texture[3]);
-    glBindTexture(GL_TEXTURE_2D, texture[3]);   // 2d texture (x and y size)
-
-    // 更换滤波方式之后，出来的效果比上面的更好
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST); // scale cheaply when image bigger than texture
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST); // scale cheaply when image smalled than texture
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, image1->sizeX, image1->sizeY, GL_RGB, GL_UNSIGNED_BYTE, image1->data);
-    free(image1);
-};
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
 void InitGL(int Width, int Height) {        // We call this right after our OpenGL window is created.
-    LoadGLTextures();				// Load The Texture(s)
+    loadGLTextures();				// 装载纹理
     BuildList();                                // set up our display lists.
-    glEnable(GL_TEXTURE_2D);			// Enable Texture Mapping
+    //glEnable(GL_TEXTURE_2D);			// Enable Texture Mapping 绘图前打开, 绘制结束以后关闭
+    glEnable(GL_BLEND);
 
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);	// Clear The Background Color To Blue
     glClearDepth(1.0);				// Enables Clearing Of The Depth Buffer
@@ -340,8 +142,48 @@ void InitGL(int Width, int Height) {        // We call this right after our Open
     glEnable(GL_LIGHTING);
     glEnable(GL_COLOR_MATERIAL);
 
-    server_init_flag = false;
-    square_len = 0;
+
+    serverInitFlag = false;
+    squareLen = 0;
+    runLen = 0.0f;
+    barRunLen = 0.0f;
+    goAheadRate = 0.0f;
+    childRunLen = -3.0f;
+    childPos = -7.0f;
+    barLeftPos = -3.0f;
+    barRightPos = 1.0f;
+    //buildingLeftFlag = 0b0;
+    buildingLeftFlag = 0b011000000101;
+    buildingRightFlag = 0b000010101001;
+    barLeftFlag = 0b111111111111111111;
+    barRightFlag = 0b111111111111111111;
+    srand(time(NULL));
+    // 初始化出现时间
+    time(&appear);
+    time(&appearTmp);
+    // 刚开始是不会出现不倒翁的
+    bdwAppear = 0;
+    // 默认从左侧出现不倒翁
+    appearMode = 0;
+    // 清空eeg数据数组的内存
+    memset(eegDataBuffer, 0, sizeof(eegDataBuffer));
+    memset(markPos, 0, sizeof(markPos));
+    memset(signalPos, 0, sizeof(signalPos));
+    eegDataPos = 0;
+    disappearTime = 7;
+    // 盒子默认均显示
+    disappearBoxMode = 1;
+    // 正常盒子默认纹理为0
+    commonTextureMode = 0;
+
+    fp = fopen("rate_recorder.txt", "a+"); // a+意味着在文本最后追加
+    fp = fopen("recorder.txt", "a+"); // a+意味着在文本最后追加
+
+    config.initConfig("conf/sysProperties.cfg");
+    //config.printConfig();             // 检查配置文件是否读入正确
+
+    worldMap.initWorldMap("Data/WorldMap.txt");
+    //worldMap.prinfWorldMap();
 }
 
 /* The function called when our window is resized (which shouldn't happen, because we're fullscreen) */
@@ -358,153 +200,221 @@ void ReSizeGLScene(int Width, int Height) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-/* The main drawing function. */
-void DrawGLScene() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Clear The Screen And The Depth Buffer
+// 传入参数 当前位置, 步进长度, 上届, 下届
+// 返回数据,越界返回false, 否则返回true
+bool moveFunction(GLfloat &pos, GLfloat addLen, GLfloat maxLen, GLfloat minLen) {
+    // 首先检查该操作是否会越界
+    if(pos + addLen > maxLen || pos + addLen < minLen) return false;
+    else pos += addLen;
 
-    // 绘制公路
-    glBindTexture(GL_TEXTURE_2D, texture[0]);
-    for(int i = 0; i<12; ++i){
-        glLoadIdentity();
-        glTranslatef(-3.0f,-1.0f, (i+1)*(-4.0f)); // 移动绘点
-        glCallList(road);
+    return true;
+}
+
+GLfloat positionX = 27.0f;
+
+void drawGrass() {
+    GLfloat sceneroty;
+    sceneroty = 360.0f - yrot;
+    // 首先绘制草坪
+    glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(grassTexture));
+
+    glRotatef(sceneroty, 0, 1.0f, 0);
+    for(int i = 0; i<worldMap.getLength(); ++i) {
+        for(int j = 0; j<worldMap.getWidth(); ++j) {
+            char temp = worldMap.getWorldMap(i, j);
+            if(temp == '*' || temp == 'B' || temp == 'b') {
+                glLoadIdentity();
+                glRotatef(sceneroty, 0, 1.0f, 0);
+                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glCallList(grass);
+            }
+        }
     }
-    // 绘制草地
-    glBindTexture(GL_TEXTURE_2D, texture[1]);
-    for(int i = 0; i<12; ++i){
-        for(int j = 0; j<12; ++j) {
-            if(j == 7) continue;
-            glLoadIdentity();
-            glTranslatef(-4.0f*(j-6)+1,-1.0f, (i+1)*(-4.0f)); // 移动绘点
-            glCallList(road);
+}
+
+void drawBuilding() {
+    GLfloat sceneroty;
+    sceneroty = 360.0f - yrot;
+
+    glRotatef(sceneroty, 0, 1.0f, 0);
+    for(int i = 0; i<worldMap.getLength(); ++i) {
+        for(int j = 0; j<worldMap.getWidth(); ++j) {
+            char temp = worldMap.getWorldMap(i, j);
+            if(temp == 'B') {
+                // 首先绘制草坪
+                glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(building1Texture));
+                glLoadIdentity();
+                glRotatef(sceneroty, 0, 1.0f, 0);
+                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glCallList(building1);
+            } else if(temp == 'b') {
+                // 首先绘制草坪
+                glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(building2Texture));
+                glLoadIdentity();
+                glRotatef(sceneroty, 0, 1.0f, 0);
+                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glCallList(building2);
+            }
+        }
+    }
+}
+void drawRoad() {
+    GLfloat sceneroty;
+    sceneroty = 360.0f - yrot;
+
+    glRotatef(sceneroty, 0, 1.0f, 0);
+    for(int i = 0; i<worldMap.getLength(); ++i) {
+        for(int j = 0; j<worldMap.getWidth(); ++j) {
+            char temp = worldMap.getWorldMap(i, j);
+            if(temp == '|') {
+                // 首先绘制草坪
+                glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(roadTexture));
+                glLoadIdentity();
+                glRotatef(sceneroty, 0, 1.0f, 0);
+                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glCallList(road);
+            }
         }
     }
 
-    // 绘制草地
-    glBindTexture(GL_TEXTURE_2D, texture[2]);
-    glLoadIdentity();
-    glTranslatef(-3.0,-1.0f, -4.0f); // 移动绘点
-    glCallList(building1);
+}
 
+/* The main drawing function. */
+void DrawGLScene() {
+
+    /// 画图
+
+    // 将背景色设置为天蓝色
+    glClearColor(0.251f, 0.251f, 1.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Clear The Screen And The Depth Buffer
+
+    glEnable(GL_TEXTURE_2D);
+
+    drawGrass();
+    drawBuilding();
+    drawRoad();
+
+    /************场景移动开始***************/
+    // 开始进行场景移动
+    goAheadRate += goAheadAc;
+    //  防止速度过快
+    if(goAheadRate >= runLenMax) goAheadRate = runLenMax;
+    if(goAheadRate <= runLenMin) goAheadRate = runLenMin;
+    //runLen += goAheadRate;
+    // 小孩的速度恒定
+    //childRunLen += 0.1f;
+    if(runLen >= 4.0f) {
+        //runLen = 0.0f;
+        buildingLeftFlag = (buildingLeftFlag<<1) & 0b111111111111;
+        buildingRightFlag = (buildingRightFlag<<1) & 0b111111111111;
+        // 左边有1/4的概率出现一栋楼房
+        int randTemp = rand();
+        if(randTemp%8 == 0) buildingLeftFlag |= 1;
+        // 右边同样有1/4的概率出现一栋楼房(如果为4的倍数)
+        if(randTemp%8 == 1) buildingRightFlag |= 1;
+
+        childPos += 4.0f;
+    }
+
+    /*****************场景移动结束***********/
+
+    glDisable(GL_TEXTURE_2D);
+    // 0表示消失
     // since this is double buffered, swap the buffers to display what just got drawn.
     glutSwapBuffers();
+
+
 }
 
 /* The function called whenever a key is pressed. */
 void keyPressed(unsigned char key, int x, int y) {
     /* avoid thrashing this procedure */
-    usleep(100);
+    //usleep(100);
 
     /* If escape is pressed, kill everything. */
     if (key == ESCAPE) {
+        fclose(fp);
         /* shut down our window */
         glutDestroyWindow(window);
 
         /* exit the program...normal termination. */
         exit(0);
+    } else if(key == CHANGE_MODE) {
+        // 有两种情况可能发生
+        // 情况一: 只从左边出现
+        // 情况二: 左右都有可能出现
+        appearMode = (appearMode+1) % 2;
+    } else if(key == DISAPPEAR_BOX) {
+        disappearBoxMode = (disappearBoxMode+1) % 5;
+    } else if(key == CHANGE_TEXTURE) {
+        commonTextureMode = (commonTextureMode+1) % 2;
     }
+
+    /*else{
+        printf ("Key %d pressed. No action there yet.\n", key);
+        exit(0);
+    }*/
 }
 
 /* The function called whenever a normal key is pressed. */
 void specialKeyPressed(int key, int x, int y) {
     /* avoid thrashing this procedure */
-    usleep(100);
+    //usleep(100);
 
     switch (key) {
     case GLUT_KEY_UP:
-        xrot -= 0.2f;
+        runLenMax += 0.025f;
+        if(runLenMax >= 1.0f) runLenMax = 1.0f;
+        runLen += goAheadRate;
         break;
 
     case GLUT_KEY_DOWN:
-        xrot += 0.2f;
+        runLenMax -= 0.025f;
+        if(runLenMax <= 0.0f) runLenMax = 0.0f;
+        runLen -= goAheadRate;
         break;
 
     case GLUT_KEY_LEFT:
-        yrot += 0.2f;
+        childRunRate -= 0.01f;
+        if(childRunRate <= 0.0f) childRunRate = 0.0f;
+        yrot += 1.5f;
         break;
 
     case GLUT_KEY_RIGHT:
-        yrot -= 0.2f;
+        childRunRate += 0.01f;
+        if(childRunRate >= 1.0f) childRunRate = 1.0f;
+        yrot -= 1.5f;
         break;
 
     default:
-        printf ("Special key %d pressed. No action there yet.\n", key);
+        //printf ("Special key %d pressed. No action there yet.\n", key);
         break;
     }
+    time(&now);
+    tmNow = gmtime(&now);
+    fprintf(fp, "%d-%d-%d %d:%d:%d runLenMax: %f childRunRate: %f\n",
+            tmNow->tm_year+1900, tmNow->tm_mon+1, tmNow->tm_mday, tmNow->tm_hour+8,
+            tmNow->tm_min, tmNow->tm_sec, runLenMax, childRunRate);
 }
 
-void IdleFun() { // 回调函数，在控制台中的一些操作，需要在本部分进行控制
-    //printf("test\n");
-    if(!server_init_flag) {
-        //square_len++;
-        //if(square_len >= 100) square_len = 0;
-        //printf("init\n");
-        if(tcp_server_init(server_sockfd, conn)) printf("success\n");
-        else printf("false\n");
-        server_init_flag = true;
-        glutPostRedisplay();
-    } else {
-        memset(buffer,0,sizeof(buffer));
-        int len = recv(conn, buffer, sizeof(buffer),0);
-        for(int i = 0; i<len; ++i) {
-            if(buffer[0] == 0x66) {
-                square_len++;
-                if(square_len >= 100) square_len = 100;
-            } else if(buffer[0] == 0x64) {
-                square_len--;
-                if(square_len <= 0) square_len = 0;
-            }
-        }
-        fputs(buffer, stdout);
-        send(conn, buffer, len, 0);
-        glutPostRedisplay();
-    }
-}
+pthread_t draw_thread;
 
 int main(int argc, char **argv) {
-    /* Initialize GLUT state - glut will take any command line arguments that pertain to it or
-       X Windows - look at its documentation at http://reality.sgi.com/mjk/spec3/spec3.html */
+
     glutInit(&argc, argv);
-
-    /* Select type of Display mode:
-     Double buffer
-     RGBA color
-     Alpha components supported
-     Depth buffer */
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
-
-    /* get a 640 x 480 window */
     glutInitWindowSize(640, 480);
-
-    /* the window starts at the upper left corner of the screen */
     glutInitWindowPosition(0, 0);
-
-    /* Open a window */
-    window = glutCreateWindow("Jeff Molofee's GL Code Tutorial ... NeHe '99");
-
-    /* Register the function to do all our OpenGL drawing. */
+    window = glutCreateWindow("EEG Virtual Driving Environment");
     glutDisplayFunc(&DrawGLScene);
-
-    /* Go fullscreen.  This is as soon as possible. */
     glutFullScreen();
-
-    /* Even if there are no events, redraw our gl scene. */
     glutIdleFunc(&DrawGLScene);
-
-    /* Register the function called when our window is resized. */
+    //glutIdleFunc(&IdleFun);
     glutReshapeFunc(&ReSizeGLScene);
-
-    /* Register the function called when the keyboard is pressed. */
     glutKeyboardFunc(&keyPressed);
-
-    /* Register the function called when special keys (arrows, page down, etc) are pressed. */
     glutSpecialFunc(&specialKeyPressed);
-
-    /* Initialize our window. */
     InitGL(640, 480);
-
-    /* Start Event Processing Engine */
     glutMainLoop();
 
-    return 1;
+    return 0;
 }

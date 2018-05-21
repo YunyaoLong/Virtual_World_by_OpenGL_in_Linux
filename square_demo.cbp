@@ -2,7 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="square_demo" />
+		<Option title="VirtualDriving" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -13,6 +13,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="include" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -22,6 +23,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="include" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -32,8 +34,24 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="include/Character.h" />
+		<Unit filename="include/HBuilding.h" />
+		<Unit filename="include/Objects.h" />
+		<Unit filename="include/Rectangle.h" />
+		<Unit filename="include/TimeTool.h" />
+		<Unit filename="include/WorldMap.h" />
+		<Unit filename="include/config.h" />
+		<Unit filename="include/image.h" />
+		<Unit filename="include/tcp_server.h" />
+		<Unit filename="include/texture.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="tcp_server.h" />
+		<Unit filename="src/Character.cpp" />
+		<Unit filename="src/HBuilding.cpp" />
+		<Unit filename="src/Rectangle.cpp" />
+		<Unit filename="src/TimeTool.cpp" />
+		<Unit filename="src/WorldMap.cpp" />
+		<Unit filename="src/config.cpp" />
+		<Unit filename="src/image.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
