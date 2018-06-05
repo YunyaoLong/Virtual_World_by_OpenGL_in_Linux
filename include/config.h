@@ -48,6 +48,7 @@ float getFloatVal(string floatStr);
 * date : 2018-03-07 11:10:54
 ****************************************/
 int getIntVal(string intStr);
+void float2str(float val, char* buffer);
 
 #endif
 

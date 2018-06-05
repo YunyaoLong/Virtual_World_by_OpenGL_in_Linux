@@ -603,14 +603,13 @@
 1521260596 /home/yunyao/dev/C++/backup/VirtualV8.2/include/Character.h
 	<GL/gl.h>
 
-1521336779 source:/home/yunyao/dev/C++/backup/VirtualV8.3/main.cpp
+1522583487 source:/home/yunyao/dev/C++/backup/VirtualV8.3/main.cpp
 	<GL/glut.h>
 	<GL/gl.h>
 	<GL/glu.h>
 	<stdio.h>
 	<stdlib.h>
 	<unistd.h>
-	<time.h>
 	"tcp_server.h"
 	"image.h"
 	"texture.h"
@@ -661,10 +660,10 @@
 
 1521257081 /home/yunyao/dev/C++/backup/VirtualV8.3/include/WorldMap.h
 
-1521344344 /home/yunyao/dev/C++/backup/VirtualV8.3/include/Character.h
+1522583807 /home/yunyao/dev/C++/backup/VirtualV8.3/include/Character.h
 	<GL/gl.h>
 
-1521258441 source:/home/yunyao/dev/C++/backup/VirtualV8.3/src/Character.cpp
+1522583852 source:/home/yunyao/dev/C++/backup/VirtualV8.3/src/Character.cpp
 	"Character.h"
 
 1521259798 source:/home/yunyao/dev/C++/backup/VirtualV8.3/src/config.cpp
@@ -685,6 +684,182 @@
 	"TimeTool.h"
 
 1521257126 source:/home/yunyao/dev/C++/backup/VirtualV8.3/src/WorldMap.cpp
+	"WorldMap.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
+1522592546 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/config.cpp
+	"config.h"
+	<stdlib.h>
+	<stdio.h>
+
+1522592782 /home/yunyao/dev/C++/backup/VirtualV8.4/include/config.h
+	<string>
+	<map>
+
+1521083686 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/HBuilding.cpp
+	"HBuilding.h"
+
+1521083673 /home/yunyao/dev/C++/backup/VirtualV8.4/include/HBuilding.h
+	<GL/gl.h>
+
+1521253746 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/image.cpp
+	"image.h"
+
+1521253728 /home/yunyao/dev/C++/backup/VirtualV8.4/include/image.h
+	<stdio.h>
+
+1521101598 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/Rectangle.cpp
+	"Rectangle.h"
+
+1522635013 /home/yunyao/dev/C++/backup/VirtualV8.4/include/Rectangle.h
+	<GL/gl.h>
+
+1521101590 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/TimeTool.cpp
+	"TimeTool.h"
+
+1521081305 /home/yunyao/dev/C++/backup/VirtualV8.4/include/TimeTool.h
+	<time.h>
+	<string>
+
+1521257126 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/WorldMap.cpp
+	"WorldMap.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
+1521257081 /home/yunyao/dev/C++/backup/VirtualV8.4/include/WorldMap.h
+
+1522636815 source:/home/yunyao/dev/C++/backup/VirtualV8.4/main.cpp
+	<GL/glut.h>
+	<GL/gl.h>
+	<GL/glu.h>
+	<GL/freeglut.h>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	"tcp_server.h"
+	"image.h"
+	"texture.h"
+	"Objects.h"
+	"config.h"
+	"TimeTool.h"
+	"WorldMap.h"
+	"Character.h"
+	<pthread.h>
+
+1500433376 /home/yunyao/dev/C++/backup/VirtualV8.4/include/tcp_server.h
+	<sys/types.h>
+	<sys/socket.h>
+	<stdio.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<unistd.h>
+	<string.h>
+	<stdlib.h>
+	<fcntl.h>
+	<sys/shm.h>
+
+1521255350 /home/yunyao/dev/C++/backup/VirtualV8.4/include/texture.h
+	<GL/gl.h>
+	<GL/glu.h>
+	<vector>
+
+1522635265 /home/yunyao/dev/C++/backup/VirtualV8.4/include/Objects.h
+	"Rectangle.h"
+	"HBuilding.h"
+
+1522649548 /home/yunyao/dev/C++/backup/VirtualV8.4/include/Character.h
+	<GL/gl.h>
+
+1522590245 source:/home/yunyao/dev/C++/backup/VirtualV8.4/src/Character.cpp
+	"Character.h"
+	<math.h>
+
+1526919408 source:/home/yunyao/dev/C++/backup/VirtualV8.5/main.cpp
+	<GL/glut.h>
+	<GL/gl.h>
+	<GL/glu.h>
+	<GL/freeglut.h>
+	<stdio.h>
+	<stdlib.h>
+	<unistd.h>
+	"tcp_server.h"
+	"image.h"
+	"texture.h"
+	"Objects.h"
+	"config.h"
+	"TimeTool.h"
+	"WorldMap.h"
+	"Character.h"
+	<pthread.h>
+
+1500433376 /home/yunyao/dev/C++/backup/VirtualV8.5/include/tcp_server.h
+	<sys/types.h>
+	<sys/socket.h>
+	<stdio.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<unistd.h>
+	<string.h>
+	<stdlib.h>
+	<fcntl.h>
+	<sys/shm.h>
+
+1521253728 /home/yunyao/dev/C++/backup/VirtualV8.5/include/image.h
+	<stdio.h>
+
+1521255350 /home/yunyao/dev/C++/backup/VirtualV8.5/include/texture.h
+	<GL/gl.h>
+	<GL/glu.h>
+	<vector>
+
+1522635265 /home/yunyao/dev/C++/backup/VirtualV8.5/include/Objects.h
+	"Rectangle.h"
+	"HBuilding.h"
+
+1522635013 /home/yunyao/dev/C++/backup/VirtualV8.5/include/Rectangle.h
+	<GL/gl.h>
+
+1521083673 /home/yunyao/dev/C++/backup/VirtualV8.5/include/HBuilding.h
+	<GL/gl.h>
+
+1522592782 /home/yunyao/dev/C++/backup/VirtualV8.5/include/config.h
+	<string>
+	<map>
+
+1521081305 /home/yunyao/dev/C++/backup/VirtualV8.5/include/TimeTool.h
+	<time.h>
+	<string>
+
+1521257081 /home/yunyao/dev/C++/backup/VirtualV8.5/include/WorldMap.h
+
+1526837488 /home/yunyao/dev/C++/backup/VirtualV8.5/include/Character.h
+	<GL/gl.h>
+
+1526842623 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/Character.cpp
+	"Character.h"
+	<math.h>
+
+1522592546 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/config.cpp
+	"config.h"
+	<stdlib.h>
+	<stdio.h>
+
+1521083686 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/HBuilding.cpp
+	"HBuilding.h"
+
+1521253746 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/image.cpp
+	"image.h"
+
+1521101598 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/Rectangle.cpp
+	"Rectangle.h"
+
+1521101590 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/TimeTool.cpp
+	"TimeTool.h"
+
+1521257126 source:/home/yunyao/dev/C++/backup/VirtualV8.5/src/WorldMap.cpp
 	"WorldMap.h"
 	<stdio.h>
 	<string.h>

@@ -11,10 +11,10 @@
 #include <GL/glut.h>    // Header File For The GLUT Library
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
+#include <GL/freeglut.h>
 #include <stdio.h>      // Header file for standard file i/o.
 #include <stdlib.h>     // Header file for malloc/free.
 #include <unistd.h>     // needed to sleep.
-#include <time.h>
 #include "tcp_server.h"
 #include "image.h"
 #include "texture.h"
@@ -32,90 +32,25 @@
 
 /* The number of our GLUT window */
 int window;
-
-/* floats for x rotation, y rotation, z rotation */
-//float xrot, yrot, zrot;
-
-GLuint xloop;            // loop for x axis.
-GLuint yloop;            // loop for y axis.
-
-GLfloat xrot;            // rotates cube on the x axis.
-GLfloat yrot;            // rotates cube on the y axis.
-
-
-GLfloat runLen;        // 用来控制向前行驶
-GLfloat runLenMax = 0.4f;  // 用来控制最高速度
-GLfloat runLenMin = 0.0f;  // 用来控制最低速度
-GLfloat barRunLen;
-GLfloat childPos, barPos;
-GLfloat barLeftPos = -3.0f, barRightPos = 1.0f; // 左右障碍物的位置
-GLfloat childRunLen, childRunRate = 0.065f;  // 用来控制小孩的跑动, 其中第二个参数为障碍物出现的速度
-// 步进速度以及步进加速度，其中不经速度上界为0.1f
-// 步进速度和脚踏的角度有关，这里先默认为0.01f
-GLfloat goAheadRate, goAheadAc = 0.001f;
-
-// bdwAppear 用来存放不倒翁的3种出状态(消失,开始移动,静止), appear_mode用来存放不倒翁的出现方式(从左边出现还是随机出现)
-char bdwAppear, appearMode, commonTextureMode;
-
-// 左侧有12*4个单位的长度，右侧同样
-// 一个int有32位，每一位便可以表示一个格子，每个格子长4个单位
-int buildingLeftFlag, buildingRightFlag;
-
-// 左侧有16*3个单位的长度，右侧同样, 用来标志某个位置的箱子是否为障碍箱子
-int barLeftFlag, barRightFlag;
-
-// 左侧有16*3个单位的长度，右侧同样, 用来标志模式5中, 该箱子是否需要显示(障碍箱子必定显示)
-int visibleLeftFlag, visibleRightFlag;
-
-bool leftOrRightFlag;
 // disappear 用来存放障碍物将要消失的时间
 int disappearTime;
 
-char disappearBoxMode;
-
-int squareLen;
-
-/* TCP 链接  */
-#define BUFFER_SIZE 1024
-int serverSockfd, conn;
-char buffer[BUFFER_SIZE];
-bool serverInitFlag;
-
-
-// 怪物出现概率
-float monsterPro = 0.1;
-
-// 记录怪兽出现的时间
-time_t appear, appearTmp;
-
 // 记录当前时间和一些参数
 FILE *fp = NULL;
-time_t now;
-struct tm *tmNow;
 
 WorldMap worldMap;
 Config config;
+Character *character;
 
 #include <pthread.h>
-// 定义一个接受eeg数据的数组
+
+/// TCP
 #define HELLO_WORLD_SERVER_PORT    4000
 #define LENGTH_OF_LISTEN_QUEUE 20
-#define CLIENT_IP "192.168.0.1"
-#define MAX_EEG_DATA_BUFFER_SIZE 80
-#define MAX_EEG_DAT 0.02
-int signal, signalTmp;
-int mark, markTmp;
-float eegDataBuffer[MAX_EEG_DATA_BUFFER_SIZE];
-int markPos[MAX_EEG_DATA_BUFFER_SIZE], signalPos[MAX_EEG_DATA_BUFFER_SIZE];
-int eegDataPos;
-float data1, data2, data3;
-pthread_t writeEegDataBufferThread;
-struct sockaddr_in serverAddr;
-int serverSocket;
-struct sockaddr_in clientAddr;
-int clientSocket;
-socklen_t length;
-char eachLineData[BUFFER_SIZE];
+#define BUFFER_SIZE 1024
+struct sockaddr_in server_addr, client_addr;
+int server_socket, client_socket;
+char each_line_data[BUFFER_SIZE];
 
 
 /* A general OpenGL initialization function.  Sets all of the initial parameters. */
@@ -138,55 +73,60 @@ void InitGL(int Width, int Height) {        // We call this right after our Open
 
     glMatrixMode(GL_MODELVIEW);
 
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_COLOR_MATERIAL);
-
-
-    serverInitFlag = false;
-    squareLen = 0;
-    runLen = 0.0f;
-    barRunLen = 0.0f;
-    goAheadRate = 0.0f;
-    childRunLen = -3.0f;
-    childPos = -7.0f;
-    barLeftPos = -3.0f;
-    barRightPos = 1.0f;
-    //buildingLeftFlag = 0b0;
-    buildingLeftFlag = 0b011000000101;
-    buildingRightFlag = 0b000010101001;
-    barLeftFlag = 0b111111111111111111;
-    barRightFlag = 0b111111111111111111;
     srand(time(NULL));
-    // 初始化出现时间
-    time(&appear);
-    time(&appearTmp);
-    // 刚开始是不会出现不倒翁的
-    bdwAppear = 0;
-    // 默认从左侧出现不倒翁
-    appearMode = 0;
-    // 清空eeg数据数组的内存
-    memset(eegDataBuffer, 0, sizeof(eegDataBuffer));
-    memset(markPos, 0, sizeof(markPos));
-    memset(signalPos, 0, sizeof(signalPos));
-    eegDataPos = 0;
     disappearTime = 7;
-    // 盒子默认均显示
-    disappearBoxMode = 1;
-    // 正常盒子默认纹理为0
-    commonTextureMode = 0;
 
     fp = fopen("rate_recorder.txt", "a+"); // a+意味着在文本最后追加
     fp = fopen("recorder.txt", "a+"); // a+意味着在文本最后追加
 
     config.initConfig("conf/sysProperties.cfg");
-    //config.printConfig();             // 检查配置文件是否读入正确
-
     worldMap.initWorldMap("Data/WorldMap.txt");
-    //worldMap.prinfWorldMap();
+
+    // 读取配置文件
+    GLfloat initX = getFloatVal(config.getConfig("positionX")),
+        initY = getFloatVal(config.getConfig("positionY")),
+        initZ = getFloatVal(config.getConfig("positionZ"));
+    character = new Character(0.0f, initX, initY, initZ);
+
+
+    /************************** 开始TCP ********************/
+    int opt = 1;
+
+    bzero(&server_addr,sizeof(server_addr));
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    server_addr.sin_port = htons(HELLO_WORLD_SERVER_PORT);
+
+    // create a socket
+    server_socket = socket(PF_INET,SOCK_STREAM,0);
+    if( server_socket < 0) {
+        printf("Create Socket Failed!");
+        exit(1);
+    }
+
+    // bind socket to a specified address
+    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if( bind(server_socket,(struct sockaddr*)&server_addr,sizeof(server_addr))) {
+        printf("Server Bind Port : %d Failed!", HELLO_WORLD_SERVER_PORT);
+        exit(1);
+    }
+
+    // listen a socket
+    if(listen(server_socket, LENGTH_OF_LISTEN_QUEUE)) {
+        printf("Server Listen Failed!");
+        exit(1);
+    }
+    // accept socket from client
+    socklen_t length = sizeof(client_addr);
+    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &length);
+    if( client_socket < 0) {
+        printf("Server Accept Failed!\n");
+        //break;
+    }
 }
 
-/* The function called when our window is resized (which shouldn't happen, because we're fullscreen) */
+/* The function called when our window is resized (which should't happen, because we're fullscreen) */
 void ReSizeGLScene(int Width, int Height) {
     if (Height==0)				// Prevent A Divide By Zero If The Window Is Too Small
         Height=1;
@@ -200,21 +140,11 @@ void ReSizeGLScene(int Width, int Height) {
     glMatrixMode(GL_MODELVIEW);
 }
 
-// 传入参数 当前位置, 步进长度, 上届, 下届
-// 返回数据,越界返回false, 否则返回true
-bool moveFunction(GLfloat &pos, GLfloat addLen, GLfloat maxLen, GLfloat minLen) {
-    // 首先检查该操作是否会越界
-    if(pos + addLen > maxLen || pos + addLen < minLen) return false;
-    else pos += addLen;
-
-    return true;
-}
-
-GLfloat positionX = 27.0f;
+//GLfloat positionX = 27.0f;
 
 void drawGrass() {
     GLfloat sceneroty;
-    sceneroty = 360.0f - yrot;
+    sceneroty = 360.0f - character->getYRot();
     // 首先绘制草坪
     glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(grassTexture));
 
@@ -225,7 +155,7 @@ void drawGrass() {
             if(temp == '*' || temp == 'B' || temp == 'b') {
                 glLoadIdentity();
                 glRotatef(sceneroty, 0, 1.0f, 0);
-                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glTranslatef(j*4.0f-character->getPositionX(), 0.0f-character->getPositionY(), i*(-4.0f)-character->getPositionZ());
                 glCallList(grass);
             }
         }
@@ -234,7 +164,7 @@ void drawGrass() {
 
 void drawBuilding() {
     GLfloat sceneroty;
-    sceneroty = 360.0f - yrot;
+    sceneroty = 360.0f - character->getYRot();
 
     glRotatef(sceneroty, 0, 1.0f, 0);
     for(int i = 0; i<worldMap.getLength(); ++i) {
@@ -245,14 +175,14 @@ void drawBuilding() {
                 glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(building1Texture));
                 glLoadIdentity();
                 glRotatef(sceneroty, 0, 1.0f, 0);
-                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glTranslatef(j*4.0f-character->getPositionX(), 0.0f-character->getPositionY(), i*(-4.0f)-character->getPositionZ());
                 glCallList(building1);
             } else if(temp == 'b') {
                 // 首先绘制草坪
                 glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(building2Texture));
                 glLoadIdentity();
                 glRotatef(sceneroty, 0, 1.0f, 0);
-                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glTranslatef(j*4.0f-character->getPositionX(), 0.0f-character->getPositionY(), i*(-4.0f)-character->getPositionZ());
                 glCallList(building2);
             }
         }
@@ -260,7 +190,7 @@ void drawBuilding() {
 }
 void drawRoad() {
     GLfloat sceneroty;
-    sceneroty = 360.0f - yrot;
+    sceneroty = 360.0f - character->getYRot();
 
     glRotatef(sceneroty, 0, 1.0f, 0);
     for(int i = 0; i<worldMap.getLength(); ++i) {
@@ -271,19 +201,69 @@ void drawRoad() {
                 glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(roadTexture));
                 glLoadIdentity();
                 glRotatef(sceneroty, 0, 1.0f, 0);
-                glTranslatef(j*4.0f-positionX, -1.0f, i*(-4.0f)+runLen);
+                glTranslatef(j*4.0f-character->getPositionX(), 0.0f-character->getPositionY(), i*(-4.0f)-character->getPositionZ());
                 glCallList(road);
+            } else if(temp == '-' || temp == '+') {
+                // 首先绘制草坪
+                glBindTexture(GL_TEXTURE_2D, texture->getGLTexture(roadTexture));
+                glLoadIdentity();
+                glRotatef(sceneroty, 0, 1.0f, 0);
+                glTranslatef(j*4.0f-character->getPositionX(), 0.0f-character->getPositionY(), i*(-4.0f)-character->getPositionZ());
+                glCallList(horRoad);
             }
         }
     }
+}
+/*
+char floatStr[64];
+char str[] = "speed: ";
+void printInfo() {
+    glLoadIdentity();
+    glTranslatef(0.0f, 0.0f, -1.0f);
+    glRasterPos2i(0, 0);
+
+    //逐个显示字符串中的每个字符
+    const unsigned char* t = reinterpret_cast<const unsigned char *>("statue");
+    //glutBitmapString(GLUT_BITMAP_HELVETICA_18, t);
 
 }
+*/
 
 /* The main drawing function. */
 void DrawGLScene() {
 
-    /// 画图
 
+    /// step 0: TCP 接受消息
+    bzero(each_line_data, BUFFER_SIZE);
+    memset(each_line_data, 0, sizeof(each_line_data));
+    int length = recv(client_socket, each_line_data, BUFFER_SIZE, 0);
+    if (length < 0) {
+        //rprintf("Server Receive Data Failed!\n");
+        //break;
+    }else{
+        //printf("%s\n\n", each_line_data);
+        int wheel, power, stop;
+        sscanf(each_line_data, "%d&%d&%d", &wheel, &power, &stop);
+        printf("wheel:%d power:%d stop:%d\n", wheel, power/25, stop);
+        character->turnWheel(wheel*5);
+        character->stepOnTheAccelerator(power/25);
+        //character->stepOnTheBrake(stop/25);
+    }
+
+    if('q' == each_line_data[0]) {
+        printf("Quit from client!\n");
+        //break;
+    }
+
+    // signal:1 mark:0 2015.000000
+    //printf("%d %d\n", mark, mark_tmp);
+    //sscanf(each_line_data, "signal:%d mark:%d %f", &signal, &mark, &eeg_data_buffer[eeg_data_pos]);
+
+    /// step1: 首先刷新主视角状态
+    character->refreshCharacterStatus();
+    //printf("positionX: %f, positionY: %f, positionZ: %f, yRot: %f\n", character->getPositionX(), character->getPositionY(), character->getPositionZ(), character->getYRot());
+
+    /// step2: 画图
     // 将背景色设置为天蓝色
     glClearColor(0.251f, 0.251f, 1.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Clear The Screen And The Depth Buffer
@@ -293,37 +273,9 @@ void DrawGLScene() {
     drawGrass();
     drawBuilding();
     drawRoad();
-
-    /************场景移动开始***************/
-    // 开始进行场景移动
-    goAheadRate += goAheadAc;
-    //  防止速度过快
-    if(goAheadRate >= runLenMax) goAheadRate = runLenMax;
-    if(goAheadRate <= runLenMin) goAheadRate = runLenMin;
-    //runLen += goAheadRate;
-    // 小孩的速度恒定
-    //childRunLen += 0.1f;
-    if(runLen >= 4.0f) {
-        //runLen = 0.0f;
-        buildingLeftFlag = (buildingLeftFlag<<1) & 0b111111111111;
-        buildingRightFlag = (buildingRightFlag<<1) & 0b111111111111;
-        // 左边有1/4的概率出现一栋楼房
-        int randTemp = rand();
-        if(randTemp%8 == 0) buildingLeftFlag |= 1;
-        // 右边同样有1/4的概率出现一栋楼房(如果为4的倍数)
-        if(randTemp%8 == 1) buildingRightFlag |= 1;
-
-        childPos += 4.0f;
-    }
-
-    /*****************场景移动结束***********/
-
+    //printInfo();
     glDisable(GL_TEXTURE_2D);
-    // 0表示消失
-    // since this is double buffered, swap the buffers to display what just got drawn.
     glutSwapBuffers();
-
-
 }
 
 /* The function called whenever a key is pressed. */
@@ -339,15 +291,6 @@ void keyPressed(unsigned char key, int x, int y) {
 
         /* exit the program...normal termination. */
         exit(0);
-    } else if(key == CHANGE_MODE) {
-        // 有两种情况可能发生
-        // 情况一: 只从左边出现
-        // 情况二: 左右都有可能出现
-        appearMode = (appearMode+1) % 2;
-    } else if(key == DISAPPEAR_BOX) {
-        disappearBoxMode = (disappearBoxMode+1) % 5;
-    } else if(key == CHANGE_TEXTURE) {
-        commonTextureMode = (commonTextureMode+1) % 2;
     }
 
     /*else{
@@ -363,41 +306,39 @@ void specialKeyPressed(int key, int x, int y) {
 
     switch (key) {
     case GLUT_KEY_UP:
-        runLenMax += 0.025f;
-        if(runLenMax >= 1.0f) runLenMax = 1.0f;
-        runLen += goAheadRate;
+        //runLenMax += 0.025f;
+        //if(runLenMax >= 1.0f) runLenMax = 1.0f;
+        character->stepOnTheAccelerator(200);
+        character->turnWheel(0);
         break;
 
     case GLUT_KEY_DOWN:
-        runLenMax -= 0.025f;
-        if(runLenMax <= 0.0f) runLenMax = 0.0f;
-        runLen -= goAheadRate;
+        //character->stepOnTheAccelerator(-200);
+        //character->turnWheel(0);
+        /// 作弊代码
+        character->setGoAheadRate(0.0f);
+        character->setGoAheadAc(0.0f);
+        character->turnWheel(0);
+        character->setYRot(0.0f);
         break;
 
     case GLUT_KEY_LEFT:
-        childRunRate -= 0.01f;
-        if(childRunRate <= 0.0f) childRunRate = 0.0f;
-        yrot += 1.5f;
+        //yrot += 1.5f;
+        character->turnWheel(800);
         break;
 
     case GLUT_KEY_RIGHT:
-        childRunRate += 0.01f;
-        if(childRunRate >= 1.0f) childRunRate = 1.0f;
-        yrot -= 1.5f;
+        //yrot -= 1.5f;
+        character->turnWheel(-800);
         break;
 
     default:
         //printf ("Special key %d pressed. No action there yet.\n", key);
+
+        //character->turnWheel((-400)*(key-6)+200);
         break;
     }
-    time(&now);
-    tmNow = gmtime(&now);
-    fprintf(fp, "%d-%d-%d %d:%d:%d runLenMax: %f childRunRate: %f\n",
-            tmNow->tm_year+1900, tmNow->tm_mon+1, tmNow->tm_mday, tmNow->tm_hour+8,
-            tmNow->tm_min, tmNow->tm_sec, runLenMax, childRunRate);
 }
-
-pthread_t draw_thread;
 
 int main(int argc, char **argv) {
 
@@ -407,9 +348,8 @@ int main(int argc, char **argv) {
     glutInitWindowPosition(0, 0);
     window = glutCreateWindow("EEG Virtual Driving Environment");
     glutDisplayFunc(&DrawGLScene);
-    glutFullScreen();
+    //glutFullScreen();
     glutIdleFunc(&DrawGLScene);
-    //glutIdleFunc(&IdleFun);
     glutReshapeFunc(&ReSizeGLScene);
     glutKeyboardFunc(&keyPressed);
     glutSpecialFunc(&specialKeyPressed);

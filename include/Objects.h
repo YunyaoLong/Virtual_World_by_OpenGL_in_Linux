@@ -16,6 +16,7 @@
 #include "HBuilding.h"
 
 GLuint road;             // storage for the display list
+GLuint horRoad;        // 横向公路
 GLuint grass;        // storage for the 2nd display list
 GLuint building1;        // storage for the 3rd display list
 GLuint building2;        // storage for the 4th display list
@@ -30,7 +31,7 @@ GLvoid BuildList() {
     HBuilding hBuilding;   // 用户绘制水平楼栋
 
     // 首先绘制马路
-    road = glGenLists(6);              //开辟一个5个元素大小的显示列表(display list), 返回首地址指向的元素
+    road = glGenLists(7);              //开辟一个5个元素大小的显示列表(display list), 返回首地址指向的元素
     glNewList(road, GL_COMPILE);
     width = 4.0f, depth = 4.0f;
     //HRectangle *roadHRectangle = new HRectangle(width, 0.0f, depth); // 水平矩形的高度必须为0
@@ -38,28 +39,35 @@ GLvoid BuildList() {
     glEndList();
 
     // 接着绘制草坪
-    grass = road + 1;
+    horRoad = road + 1;
+    glNewList(horRoad, GL_COMPILE);
+    width = 4.0f, depth = 4.0f;
+    rectangle.drawHHRectangle(width, 0.0f, depth);
+    glEndList();
+
+    // 接着绘制草坪
+    grass = road + 2;
     glNewList(grass, GL_COMPILE);
     width = 4.0f, depth = 4.0f;
     rectangle.drawHRectangle(width, 0.0f, depth);
     glEndList();
 
     // 绘制楼栋1
-    building1 = road + 2;                    // since we generated 2 lists, this is where the second is...1 GLuint up from cube.
+    building1 = road + 3;                    // since we generated 2 lists, this is where the second is...1 GLuint up from cube.
     width = 1.0f, height = 5.0f, depth = 3.0f;
     glNewList(building1, GL_COMPILE);        // generate 2nd list (top of box).
     hBuilding.drawHBuilding(width, height, depth);
     glEndList();
 
     // 绘制楼栋2
-    building2 = road + 3;                    // since we generated 2 lists, this is where the second is...1 GLuint up from cube.
+    building2 = road + 4;                    // since we generated 2 lists, this is where the second is...1 GLuint up from cube.
     width = 1.0f, height = 3.0f, depth = 3.0f;
     glNewList(building2, GL_COMPILE);        // generate 2nd list (top of box).
     hBuilding.drawHBuilding(width, height, depth);
     glEndList();
 
     // 绘制儿童
-    children = road + 4;
+    children = road + 5;
     width = 1.0f;
     height = 1.0f;
     glNewList(children, GL_COMPILE);
@@ -76,7 +84,7 @@ GLvoid BuildList() {
     glEndList();
 
     // 绘制路人木箱
-    commonBox = road + 5;
+    commonBox = road + 6;
     width = 0.5f, height = 0.5f, depth = 0.5f;
     glNewList(commonBox, GL_COMPILE);
     hBuilding.drawHBuilding(width, height, depth);

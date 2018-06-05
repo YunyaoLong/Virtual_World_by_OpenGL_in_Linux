@@ -2,44 +2,19 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
-	<File name="src/Rectangle.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include/tcp_server.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="10" />
+			<Cursor1 position="1269" topLine="19" />
 		</Cursor>
 	</File>
-	<File name="src/Character.cpp" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include/Objects.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1211" topLine="7" />
+			<Cursor1 position="1373" topLine="27" />
 		</Cursor>
 	</File>
-	<File name="include/Character.h" open="1" top="1" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/config.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2231" topLine="52" />
-		</Cursor>
-	</File>
-	<File name="src/config.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2678" topLine="110" />
-		</Cursor>
-	</File>
-	<File name="src/HBuilding.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/config.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1031" topLine="15" />
-		</Cursor>
-	</File>
-	<File name="include/HBuilding.h" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="409" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="include/texture.h" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="0" topLine="0" />
+			<Cursor1 position="3433" topLine="107" />
 		</Cursor>
 	</File>
 	<File name="include/image.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -52,34 +27,34 @@
 			<Cursor1 position="761" topLine="85" />
 		</Cursor>
 	</File>
-	<File name="include/Rectangle.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/WorldMap.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="55" />
+			<Cursor1 position="328" topLine="32" />
 		</Cursor>
 	</File>
-	<File name="main.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7426" topLine="208" />
+			<Cursor1 position="11818" topLine="331" />
 		</Cursor>
 	</File>
-	<File name="include/Objects.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include/HBuilding.h" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1206" topLine="22" />
+			<Cursor1 position="409" topLine="86" />
 		</Cursor>
 	</File>
-	<File name="include/WorldMap.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/Character.cpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="80" topLine="0" />
+			<Cursor1 position="4020" topLine="133" />
 		</Cursor>
 	</File>
-	<File name="src/TimeTool.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/HBuilding.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="758" topLine="36" />
+			<Cursor1 position="0" topLine="39" />
 		</Cursor>
 	</File>
-	<File name="include/tcp_server.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="src/Rectangle.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="0" topLine="31" />
+			<Cursor1 position="0" topLine="10" />
 		</Cursor>
 	</File>
 	<File name="include/TimeTool.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -87,9 +62,34 @@
 			<Cursor1 position="1371" topLine="16" />
 		</Cursor>
 	</File>
-	<File name="src/WorldMap.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="include/config.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="328" topLine="26" />
+			<Cursor1 position="1683" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="include/texture.h" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="4866" topLine="133" />
+		</Cursor>
+	</File>
+	<File name="src/TimeTool.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="758" topLine="36" />
+		</Cursor>
+	</File>
+	<File name="include/Rectangle.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2712" topLine="47" />
+		</Cursor>
+	</File>
+	<File name="include/Character.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1555" topLine="11" />
+		</Cursor>
+	</File>
+	<File name="include/WorldMap.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="498" topLine="10" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

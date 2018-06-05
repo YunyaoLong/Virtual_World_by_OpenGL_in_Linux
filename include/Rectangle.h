@@ -76,6 +76,23 @@ public:
         glVertex3f(x, 0.0f, 0.0f);
         glEnd();
     }
+
+    /// 绘制水平横向的矩形
+    static void drawHHRectangle(GLfloat x, GLfloat y, GLfloat z, GLfloat u = 1.0f, GLfloat v = 1.0f) {
+        // cube without the top;
+        glBegin(GL_QUADS);			// Bottom Face
+        // 逆时针绘制
+        // 这个部分存放了马路的渲染元素
+        glTexCoord2f(u, v);
+        glVertex3f(0.0f, 0.0f, 0.0f);
+        glTexCoord2f(0.0f, v);
+        glVertex3f(0.0f, y, z);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex3f(x, y, z);
+        glTexCoord2f(u, 0.0f);
+        glVertex3f(x, 0.0f, 0.0f);
+        glEnd();
+    }
 };
 
 #endif // __RECTANGLE_H_

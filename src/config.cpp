@@ -152,3 +152,7 @@ int getIntVal(string intStr) {
     }
     return strtol(intStr.c_str(), NULL, base);
 }
+
+void float2str(float val, char* buffer){
+    snprintf(buffer, sizeof buffer, "%f", val);
+}
